@@ -11,7 +11,7 @@ var db ;
 app.get('/', (req, res) => {
     res.send('welcome to node mongo');
 })
-
+//api for cities on homepage
 app.get('/cities', (req, res) => {
     db.collection('cities').find().toArray((err,result) => {
         if(err) throw err;
@@ -19,13 +19,15 @@ app.get('/cities', (req, res) => {
     })
 })
 
+//api for restaurants on homepage for dropdown
 app.get('/restaurants', (req, res) => {
     db.collection('restaurant').find().toArray((err,result) => {
         if(err) throw err;
         res.send(result);
     })
 })
-// params
+
+//api for restaurants with respect to cityId in dropDown
 app.get('/restaurants/:cityid', (req, res) => {
     var cityid = req.params.cityid;
     db.collection('restaurant').find({city:cityid}).toArray((err,result) => {
@@ -33,7 +35,8 @@ app.get('/restaurants/:cityid', (req, res) => {
             res.send(result);
     })
 })
-// query
+
+//api for restaurants with respect to cityId or mealType
 app.get('/rest', (req, res) => {
     var query = {};
     if(req.query.cityid){
@@ -49,7 +52,23 @@ app.get('/rest', (req, res) => {
     })
 })
 
+//api for filter with cusine and cost with respect to the mealtype
 app.get('/filter/:mealtype', (req, res) => {
+   
+  //api for sorting with respect to the price 
+    var sort = {cost:1};
+    if(req.query.sortkey){
+        sort = {cost:req.query.sortkey};
+    }
+  
+    //api for pagination to display two items per page
+    var skip = 0;
+    var limit = 1000000000000;
+    if(req.query.skip && req.query.limit){
+        skip = Number(req.query.skip);
+        limit = Number(req.query.limit);
+    }
+
     var mealtype = req.params.mealtype;
     var query = {"type.mealtype": mealtype};
     if(req.query.cusine && req.query.lcost && req.query.hcost) {
@@ -68,12 +87,13 @@ app.get('/filter/:mealtype', (req, res) => {
         query = { $and: [{cost:{$gt:lcost,$lt:hcost}}],'type.mealtype':mealtype}
     }
 
-    db.collection('restaurant').find(query).toArray((err,result) => {
+    db.collection('restaurant').find(query).sort(sort).skip(skip).limit(limit).toArray((err,result) => {
         if(err) throw err;
         res.send(result);
     })
 })
 
+// api for homepage quicksearch
 app.get('/quicksearch', (req, res) => {
     db.collection('mealtype').find().toArray((err,result) => {
         if(err) throw err;
